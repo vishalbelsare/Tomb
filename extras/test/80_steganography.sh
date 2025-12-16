@@ -33,6 +33,7 @@ if test_have_prereq STEGHIDE; then
         tt_close
         '
 
+if test_have_prereq GPGRCPT; then
     test_export "recipient" # Using already generated tomb
     cp -f "$TEST_HOME/arditi.jpg" "$tomb_img"
     test_expect_success 'Testing tomb with GnuPG keys and steganographic: bury' '
@@ -60,15 +61,17 @@ if test_have_prereq STEGHIDE; then
         tt open -k $tomb_img $tomb -g --unsafe --tomb-pwd $DUMMYPASS &&
         tt_close
         '
-fi
+fi # GPGRCPT
 
-if test_have_prereq PYTHON2 CLOAKIFY DECLOAKIFY; then
+fi # STEGHIDE
+
+if test_have_prereq PYTHON3 CLOAKIFY DECLOAKIFY; then
     test_expect_success 'Testing tomb and steganographic: cloak' '
         tt cloak -k $tomb_key $TEST_HOME/cipher-amphibians $tomb_text
         '
 
     test_expect_success 'Testing tomb and steganographic: uncloak' '
-        tt uncloak -k $tomb_key_cloak $tomb_text $TEST_HOME/cipher-amphibians
+        tt uncloak $tomb_text $TEST_HOME/cipher-amphibians -o $tomb_key_cloak
         '
 fi
 test_done

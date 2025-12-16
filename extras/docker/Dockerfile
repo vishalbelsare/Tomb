@@ -1,10 +1,10 @@
 ##
 # gregtzar/tomb
 #
-# This creates an Ubuntu derived base image and installs the tomb libarary
+# This creates an Ubuntu derived base image and installs the tomb library
 # along with it's dependencies.
 
-FROM dyne/devuan:beowulf
+FROM dyne/devuan:chimaera
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TOMB_VERSION=2.9
@@ -20,9 +20,10 @@ RUN apt-get update -y && \
 	gnupg \
 	cryptsetup \
 	pinentry-curses \
+	file xxd \
 	steghide \
-	mlocate \
-	swish-e
+	plocate \
+	recoll
 
 # Build and install Tomb from remote repo
 RUN curl https://files.dyne.org/tomb/releases/Tomb-$TOMB_VERSION.tar.gz -o /tmp/Tomb-$TOMB_VERSION.tar.gz && \

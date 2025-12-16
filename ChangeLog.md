@@ -1,4 +1,43 @@
 # Tomb ChangeLog
+## 2.13
+### July 2025
+
+Important fix for a regression: the password prompt garbles the
+password to unlock the tomb, breaking tomb open in many cases.
+Previous version should be upgraded to this one, of course no damage
+could ever be caused to tombs this way.
+
+## 2.12
+### July 2025
+
+This release switches on compressed filesystem mode (zstd) by default
+when formatting a tomb with Btrfs filesystem to optimize space
+usage. It also sports updated translations and documentation. The tomb
+code was improved for readability and some bugfixes applied to slam,
+cloakify and KDF argon2.
+
+## 2.11
+### July 2024
+
+Search engine is upgraded to use recoll, based on xapian backend:
+offers a GUI and is more up to date, replaces swish-e. Various fixes
+include a better default of 3 rounds for Argon2 KDF, improved support
+for cloakify which is now shipped in tomb/extras, new support for
+pinentry-tty useful for some headless systems and terminals over
+serial port, improved usage on machines without sudo and support
+bind-hooks on folders containing spaces in their names. Also the
+translations to some other languages were improved.  All documentation
+was revisited and reorganized, manpage corrected in some parts and a
+new homepage is up at https://dyne.org/tomb
+
+## 2.10
+### Sep 2023
+
+This release adds optional support for Argon2 KDF brute-force
+protection and introduces support for doas as an alternative to sudo
+for privilege escalation. It also improves support for BTRFS formatted
+Tombs, adds zram detection as swap memory, updates documentation and
+translations and cleans up the script code.
 
 ## 2.9
 ### Jan 2021

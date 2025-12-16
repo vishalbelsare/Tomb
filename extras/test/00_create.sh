@@ -11,21 +11,9 @@ test_expect_success 'Testing tomb creation: dig, forge and lock' '
     tt_forge --tomb-pwd $DUMMYPASS &&
     print $DUMMYPASS \
         | gpg --batch --passphrase-fd 0 --no-tty --no-options -d $tomb_key \
-        | hexdump -C &&
+        | xxd &&
     tt_lock --tomb-pwd $DUMMYPASS
     '
-
-if test_have_prereq SPHINX ORACLE; then
-	test_export "sphinx_test"
-	test_expect_success 'Testing tomb creation: dig, forge and lock (sphinx password handling)' '
-        tt_dig -s 20 &&
-        tt_forge --tomb-pwd $DUMMYPASS --sphx-user $DUMMYUSER --sphx-host $DUMMYHOST &&
-        print $(echo $DUMMYPASS | sphinx get $DUMMYUSER $DUMMYHOST) \
-            | gpg --batch --passphrase-fd 0 --no-tty --no-options -d $tomb_key \
-            | hexdump -C &&
-        tt_lock --tomb-pwd $DUMMYPASS --sphx-user $DUMMYUSER --sphx-host $DUMMYHOST
-        '
-fi
 
 if test_have_prereq DOAS; then
     test_export "doas_test"
@@ -34,9 +22,31 @@ if test_have_prereq DOAS; then
         tt_forge --sudo doas --tomb-pwd $DUMMYPASS &&
         print $DUMMYPASS \
             | gpg --batch --passphrase-fd 0 --no-tty --no-options -d $tomb_key \
-            | hexdump -C &&
+            | xxd &&
         tt_lock --sudo doas --tomb-pwd $DUMMYPASS
         '
+fi
+
+if test_have_prereq BTRFS; then
+    test_export "btrfs"
+    test_expect_success 'Testing tomb creation using BTRFS filesystem' '
+    tt_dig -s 120 &&
+    tt_forge --tomb-pwd $DUMMYPASS &&
+    print $DUMMYPASS \
+        | gpg --batch --passphrase-fd 0 --no-tty --no-options -d $tomb_key \
+        | xxd &&
+    tt_lock --tomb-pwd $DUMMYPASS --filesystem btrfs
+    '
+
+    test_export "btrfsmixed"
+    test_expect_success 'Testing tomb creation using BTRFS mixedmode filesystem' '
+    tt_dig -s 20 &&
+    tt_forge --tomb-pwd $DUMMYPASS &&
+    print $DUMMYPASS \
+        | gpg --batch --passphrase-fd 0 --no-tty --no-options -d $tomb_key \
+        | xxd &&
+    tt_lock --tomb-pwd $DUMMYPASS --filesystem btrfsmixedmode
+    '
 fi
 
 test_done

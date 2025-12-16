@@ -8,7 +8,7 @@ my $STRINGPATTERN = '(".*?[^\\\]")';
 my $date = localtime;
 print '
 # Tomb - The Crypto Undertaker.
-# Copyright (C) 2007-2014 Dyne.org Foundation
+# Copyright (C) 2007-2024 Dyne.org Foundation
 # Denis Roio <jaromil@dyne.org>, 2013.
 #
 #, fuzzy
@@ -28,7 +28,7 @@ my @blacklist = ('"--"', '"\\\\000"', '`.*`', '$\(.*\)');
 
 # Translatable strings that can't be automatically detected yet
 my %undetectable = (
-    124 => '[sudo] Enter password for user ::1 user:: to gain superuser privileges'
+    151 => 'Enter password for user ::1 user:: to gain superuser privileges'
 );
 
 open my $handle, $FILE or die "Failed to open $FILE";

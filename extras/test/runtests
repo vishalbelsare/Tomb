@@ -100,7 +100,7 @@ test-tomb-create() {
         notice "Dump of clear key contents to examine them:"
         print ${dummypass} \
 	        | gpg --batch --passphrase-fd 0 --no-tty --no-options -d /tmp/test.tomb.key \
-	        | hexdump -C
+	        | xxd
         echo --
     }
 
@@ -304,12 +304,12 @@ test-set-key() {
     tt open -k /tmp/test.tomb.new.key --unsafe --tomb-pwd ${dummypass} /tmp/test.tomb
 
     [[ $? = 0 ]] && {
-        notice "Setkey succesfully swapped tomb key"
+        notice "Setkey successfully swapped tomb key"
         results+=(setkey SUCCESS)
         notice "Dump of clear key contents to examine them:"
         print ${dummypass} \
 	        | gpg --batch --passphrase-fd 0 --no-tty --no-options -d /tmp/test.tomb.new.key \
-	        | hexdump -C
+	        | xxd
         echo --
         mv /tmp/test.tomb.new.key /tmp/test.tomb.key
         tt close test

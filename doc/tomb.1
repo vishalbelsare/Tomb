@@ -1,4 +1,4 @@
-.TH tomb 1 "Jan 4, 2021" "tomb"
+.TH tomb 1 "Jun 25, 2023" "tomb"
 
 .SH NAME
 Tomb \- the Crypto Undertaker
@@ -39,20 +39,20 @@ with random data, decreasing the tomb's security.
 
 .B
 .IP "forge"
-Creates a new \fIkey\fR and prompts the user for a \fIpassword\fR to
-protect its usage using symmetric encryption. This operation uses
-random data from a non-blocking source (/dev/urandom) and it may take
-long only in some cases; to switch using a blocking source the
-\fI--use-random\fR flag can be used. The \fI-g\fR option switches on
-the use of a GPG key instead of a password (asymmetric encryption),
-then the \fI-r\fR option indicates the recipient key; more recipient
-GPG ids can be indicated (comma separated). The default cipher to
-protect the key is AES256, a custom one can be specified using the
-\fI-o\fR option, for a list of supported ciphers use \fI-v\fR. For
-additional protection against dictionary attacks on keys, the
-\fI--kdf\fR option can be used when forging a key, making sure that
-the \fItomb-kdb-pbkdf2\fR binaries in \fIextras/kdf\fR were compiled
-and installed on the system.
+Creates a new \fIkey\fR and prompts the user for a \fIpassword\fR to protect
+its usage using symmetric encryption. This operation uses random data from a
+non-blocking source (/dev/urandom) and it may take long only in some cases; to
+switch using a blocking source the \fI--use-random\fR flag can be used. The
+\fI-g\fR option switches on the use of a GPG key instead of a password
+(asymmetric encryption), then the \fI-r\fR option indicates the recipient key;
+more recipient GPG ids can be indicated (comma separated). The default cipher
+to protect the key is AES256, a custom one can be specified using the \fI-o\fR
+option, for a list of supported ciphers use \fI-v\fR. For additional protection
+against dictionary attacks on keys, the \fI--kdf\fR option can be used when
+forging a key. Two KDF are currently supported: \fIargon2\fR and \fIpbkdf2\fR.
+\fIpbkdf2\fR is available from \fIextras/kdf\fR and needs to be compiled and
+installed on the system. \fIargon2\fR is generally available from distribution
+repositories.
 
 .B
 .IP "lock"
@@ -68,10 +68,28 @@ option can be used to specify the cipher specification: default is
 If you are looking for something exotic, also try
 "serpent-xts-plain64". More options may be found in cryptsetup(8) and
 Linux documentation. The \fI--filesystem\fR option can be used to
-specify "btrfs" as an alternative filesystem used to format the tomb,
+specify an alternative filesystem used to format the tomb,
 in place of the default "ext4". This operation requires root
-privileges to loopback mount, format the tomb (using LUKS and Ext4),
+privileges to loopback mount, format the tomb (using LUKS and mkfs),
 then set the key in its first LUKS slot.
+
+.RS
+Supported filesystems for \fI--filesystem\fR:
+.PD 0
+.IP "ext3" 15
+using operating system defaults
+.IP "ext4"
+using operating system defaults
+.IP "btrfs"
+for tombs >= 47MB using operating system defaults
+.IP "btrfsmixedmode"
+for tombs >=18MB btrfs mixed mode (see mkfs.btrfs(8))
+.IP "ext3maxinodes"
+ext3 with a maximum of inodes (for many small files)
+.IP "ext4maxinodes"
+ext4 with a maximum of inodes (for many small files)
+.PD
+.RE
 
 .B
 .IP "open"
@@ -106,19 +124,21 @@ internally to enumerate processes running in one or all tombs.
 .IP "index"
 Creates or updates the search indexes of all tombs currently open:
 enables use of the \fIsearch\fR command using simple word patterns on
-file names. Indexes are created using mlocate's updatedb(8) and
-swish-e(1) if they are found on the system. Indexes allow one to search
+file names. Indexes are created using plocate's updatedb(8) and
+recoll(1) if they are found on the system. Indexes allow one to search
 very fast for filenames and contents inside a tomb, they are stored
 inside it and are not accessible if the Tomb is closed. To avoid
 indexing a specific tomb simply touch a \fI.noindex\fR file in it.
+Useful tools to have: poppler-utils, aspell, xdg-utils, plocate.
 
 .B
 .IP "search"
 Takes any string as argument and searches for them through all tombs
 currently open and previously indexed using the \fIindex\fR command.
-The search matches filenames if mlocate is installed and then also
-file contents if swish++ is present on the system, results are listed
-on the console.
+The search matches filenames if plocate is installed and then also
+file contents if recoll is installed, all results are listed on the
+console.
+One can also run recoll's GUI using \fIrecoll -c /media/tomb\fR
 
 .B
 .IP "close"
@@ -142,7 +162,7 @@ situations. It requires \fIlsof\fR else it falls back to \fIclose\fR.
 Changes the password protecting a key file specified using
 \fI-k\fR. With keys encrypted for GPG recipients use \fI-g\fR followed
 by \fI-r\fR to indicate the new recipient key, or a comma separated
-list.. The user will need to know the key's current password, or
+list. The user will need to know the key's current password, or
 possess at least one of the current recipients GPG secret keys,
 because the key contents will be decoded and reencoded using the new
 passwords or keys. If the key file is broken (missing headers) this
@@ -201,22 +221,19 @@ key is buried in any image or not.
 
 .B
 .IP "cloak"
-Hides a tomb key (\fI-k\fR) inside a \fIlong plain-text file\fR (first
-argument) using \fIsteganography\fR: the text will change in a way
-that can hardly be noticed by human eye and hardly detected by data
-analysis. This option is useful to backup tomb keys in unsuspected
-places; it depends from the availability of \fIcloakify\fR and
-consequently \fIpython2\fR. This function does not support asymmetric
-encryption using the \fI-g\fR flag.
+Cloaks a tomb key (\fI-k\fR) disguising it as a text file using a
+cipher from \fIextras/cloak/ciphers\fR (second argument) using
+\fIcloakify\fR. This option is useful to backup tomb keys in
+unsuspected places; it needs \fIextras/cloak\fR installed and
+\fIpython3\fR.
 
 .B
 .IP "uncloak"
-This command recovers from long plain-text files the keys that were
-previously hidden into them using \fIcloak\fR.  Cloak requires a key
-filename (\fI-k\fR) and a \fIplain-text\fR file (first argument) known
-to be containing a key. If the right key password is given, the key
-will be exhumed. If the password is not known, it is quite hard to
-verify if a key is buried in a text or not.
+Recovers a tomb key from a cloaked text file. Uncloak requires a text
+file (first argument), a cipher file (second argument) and optionally
+an output file (third argument). If the first two parameters are
+correct then the output will be a valid tomb key file restored from
+cloak.
 
 .SH OPTIONS
 .B
@@ -259,38 +276,83 @@ When digging or resizing a tomb, this option must be used to specify
 the \fIsize\fR of the new file to be created. Units are megabytes (MiB).
 .B
 .IP "-g"
-Tell tomb to use a asymmetric GnuPG key encryption instead of a
+Tell tomb to use an asymmetric GnuPG key encryption instead of a
 symmetric passphrase to protect a tomb key. This option can be
 followed by \fI-r\fR when the command needs to specify recipient(s).
+.B
+.IP "--fido2"
+Use a FIDO2/WebAuthn passkey (hmac-secret) instead of a passphrase to protect
+the tomb key. Requires an authenticator that advertises the hmac-secret
+extension; during forge/open/lock Tomb will prompt for PIN/UV and device
+presence. For details see doc/FIDO2.md.
+.B
+.IP "--fido2-device \fI<path>\fR"
+Select a specific FIDO2 authenticator (e.g. /dev/hidrawX). If omitted Tomb
+auto-detects.
+.B
+.IP "--fido2-rp \fI<rp_id>\fR"
+Override the relying party id used when registering the passkey (default:
+tomb.dyne.org).
+.B
+.IP "--fido2-user \fI<name>\fR"
+Override the username stored in the authenticator when registering the passkey
+(default: the current user).
 .B
 .IP "-r \fI<gpg_id>[,<gpg_id2>]\fR"
 Provide a new set of recipient(s) to encrypt a tomb key. \fIgpg_ids\fR
 can be one or more GPG key ID, comma separated. All GPG keys must be
 trusted keys in GPG.
 .B
-.IP "--kdf \fI<itertime>\fR"
-Activate the KDF feature against dictionary attacks when creating a
-key: forces a delay of \fI<itertime>\fR times every time this key is
-used.  The actual time to wait depends on the CPU speed of the
-computer where the key is used.  Using 5 or 10 is a sane amount for
-modern computers, the value is multiplied by 1 million.
+.IP "--kdf \fI[argon2 | pbkdf2]\fR"
+Enable the KDF feature against dictionary attacks when creating a key.
+The required argument currently allows one to choose between \fIargon2\fR
+or \fIpbkdf2\fR.
+\fIargon2\fR is using a mix of RAM capacity, number of threads and
+iterations to achieve a time cost.
+\fIpbkdf2\fR is only about calculation speed to achieve a time cost.
+Due to a low memory footprint and no restrictions regarding threads, this
+time cost can be somewhat negated due to parallelization. Especially on
+GPUs with their high number of cores.
+\fIargon2\fR requires the respective binary by P-H-C to be installed, as
+packaged by most distros. \fIpbkdf2\fR is available from the \fItomb\fR
+sources and is a custom implementation of the algorithm.
+Default is \fIpbkdf2\fR.
+.B
+.IP "--kdfiter \fI<itertime>\fR"
+Available for \fIargon2\fR and \fIpbkdf2\fR. In general this controls how
+often the algorithm will be run. In case of \fIpbkdf2\fR the argument will
+be interpret as an interval in seconds. The actual number of iterations to
+achieve this delay will be calculated with \fItomb-kdb-pbkdf2-getiter\fR,
+which needs to available (normally installed alongside tomb's pbkdf2 tools).
+Reason being that the actual time to wait depends on the CPU speed.
+OWASP recommendations from 2023 suggest a minimal iteration count of 600000
+for \fIpbkdf2\fR, which should be achieved with the current default value.
+Default is 3 (based on the \fIargon2\fR default).
+.B
+.IP "--kdfmem \fI<memory>\fR"
+In case of \fIargon2\fR KDF algorithm, this value specifies the size of RAM
+used: it consists of a number which is the elevated power of two in kilobytes.
+Default is 18 which is 250 MiB (2^18 = 262,144 kilobytes).
+.B
+.IP "--kdfpar \fI<# of threads>\fR"
+In case of \fIargon2\fR KDF algorithm, this value specifies the number of
+threads that should be used. This helps to remedy the effects of an increased
+time cost for your system whereas setups of ASICs or GPUs don't profit. Only
+increase if memory or iteration got increased that much, that key decryption
+takes massively longer on regular systems.
+Default is 1 thread (based on the \fIargon2\fR default).
 .B
 .IP "--sudo \fI<executable>\fR"
-Select a different tool than sudo for privilege escalation.
-Alternatives supported so far are: pkexec, doas, sup, sud. For any
+Select a different tool than sudo or doas for privilege escalation.
+Alternatives supported so far are: pkexec, sup, sud, sudo-rs. For any
 alternative to work the executable must be included in the current
 PATH.
 .B
-.IP "--sphx-user \fI<username>\fR"
-Activate the SPHINX feature for password-authenticated key agreement.
-This option indicates the \fI<username>\fR used to retrieve the
-password from a sphinx oracle key reachable via TCP/IP.
-
-.IP "--sphx-host \fI<domain>\fR"
-Activate the SPHINX feature for password-authenticated key agreement.
-This option indicates the \fI<domain>\fR used to retrieve the password
-from a sphinx oracle daemon reachable via TCP/IP. This is not the
-network address of the daemon, which is configured in /etc/sphinx
+.IP "--pinentry \fI<toolkit>\fR"
+Add a \fIpinentry\fR which is tried first for usage. Allows to force a specific
+one or the use of an alternative not listed (like bemenu or wayprompt).
+Important: It needs to be a drop-in replacement for \fIpinentry\fR. It doesn't allow
+for a different architecture of password input.
 
 .B
 .IP "-h"
@@ -348,7 +410,7 @@ base root of the tomb.
 .IP "bind-hooks"
 This hook file consists of a simple text file named \fIbind-hooks\fR
 containing a two column list of paths to files or directories inside
-the tomb. The files and directories will be be made directly
+the tomb. The files and directories will be made directly
 accessible by the tomb \fIopen\fR command inside the current user's
 home directory. Tomb uses internally the "mount \-o bind" command to
 bind locations inside the tomb to locations found in $HOME. In the
@@ -356,10 +418,10 @@ first column are indicated paths relative to the tomb and in the
 second column are indicated paths relative to $HOME contents, for
 example:
 .EX
-  mail          mail
-  .gnupg        .gnupg
-  .fmrc         .fetchmailrc
-  .mozilla      .mozilla
+	mail          mail
+	.gnupg        .gnupg
+	.fmrc         .fetchmailrc
+	.mozilla      .mozilla
 .EE
 
 .B
@@ -381,7 +443,8 @@ user. Tomb executes as super user only when required.
 
 To be made available on multi user systems, the superuser execution of
 the tomb script can be authorized for users without jeopardizing the
-whole system's security: just add such a line to \fI/etc/sudoers\fR:
+whole system's security: In case of sudo just add such a line to
+\fI/etc/sudoers\fR:
 
 .EX
 	username ALL=NOPASSWD: /usr/local/bin/tomb
@@ -390,20 +453,25 @@ whole system's security: just add such a line to \fI/etc/sudoers\fR:
 To avoid that tomb execution is logged by \fIsyslog\fR also add:
 
 .EX
-Cmnd_Alias TOMB = /usr/local/bin/tomb
-Defaults!TOMB !syslog
+	Cmnd_Alias TOMB = /usr/local/bin/tomb
+	Defaults!TOMB !syslog
 .EE
+
+Different tools require other settings to achieve something similar.
 
 .SH PASSWORD INPUT
 
 Password input is handled by the pinentry program: it can be text
-based or graphical and is usually configured with a symlink. When
-using Tomb in X11 it is better to use a graphical pinentry-gtk2 or
-pinentry-qt because it helps preventing keylogging by other X
-clients. When using it from a remote ssh connection it might be
-necessary to force use of pinentry-curses for instance by unsetting
-the DISPLAY environment var.
-
+based or graphical. \fITomb\fR implements a logic to detect the
+preferred and working password input based on the environment (tty,
+X11 or Wayland).
+It is possible to specify a specific pinentry program which is tried
+first (\fI--pinentry tty\fR or \fI--pinentry=wayprompt\fR) but it
+should be avoided to use a text based one in a graphical environment
+as the graphical ones help preventing keylogging by other clients.
+When using it from a remote ssh connection it might be necessary to
+force use of pinentry-tty for instance by unsetting the DISPLAY (X11)
+or WAYLAND_DISPLAY (Wayland) environment var.
 
 .SH SWAP
 
@@ -442,19 +510,9 @@ prefix all invocations of tomb with a blank space, including two lines
 in ".zshrc":
 
 .EX
-export HISTIGNORESPACE=1
-alias tomb=' tomb'
+	export HISTIGNORESPACE=1
+	alias tomb=' tomb'
 .EE
-
-.SH PASSWORD INPUT
-
-Tomb uses the external program "pinentry" to let users type the key password into a terminal or a graphical window. This program works in conjunction with "gpg-agent", a daemon running in background to facilitate secret key management with gpg. It is recommended one runs "gpg-agent" launching it from the X session initialization ("~/.xsession" or "~/.xinitrc" files) with this command:
-
-.EX
-eval $(gpg-agent --daemon --write-env-file "${HOME}/.gpg-agent-info")
-.EE
-
-In the future it may become mandatory to run gpg-agent when using tomb.
 
 .SH SHARE A TOMB
 A tomb key can be encrypted with more than one recipient. Therefore, a
@@ -462,29 +520,11 @@ tomb can be shared between different users. The recipients are given
 using the \fI-r\fR (or/and \fI-R\fR) option and if multiple each GPG
 key ID must be separated by a comma (\fI,\fR). Sharing a tomb is a
 very sensitive action and the user needs to trust that all the GPG
-public keys used are kept safe. If one of them its stolen or lost, it
+public keys used are kept safe. If one of them is stolen or lost, it
 will be always possible to use it to access the tomb key unless all
 its copies are destroyed. The \fI-r\fR option can be used in the tomb
 commands: \fIopen\fR, \fIforge\fR \fIsetkey\fR, \fIpasswd\fR,
 \fIbury\fR, \fIexhume\fR and \fIresize\fR.
-
-.SH SPHINX (PAKE)
-
-Using the package libsphinx
-.UR https://github.com/stef/libsphinx
-.UE
-and its python client/daemon implementation pwdsphinx 
-.UR https://github.com/stef/pwdsphinx
-.UE
-is possible to store and retrieve safely the password that locks the
-tomb. Using this feature will make it impossible to retrieve the
-password without the oracle sphinx server running and reachable. Each
-key entry needs a username and a domain specified on creation and
-a password that locks it.
-
-SPHINX makes it impossible to maliciously retrieve the password
-locking the tomb key without an attacker accessing both the
-server, the sphinx password and the tomb key file.
 
 .SH EXAMPLES
 
@@ -538,11 +578,11 @@ keeping all its profile data inside it:
 	cat <<EOF > /media/FOX.tomb/exec-hooks
 #!/bin/sh
 if [ "$1" = "open" ]; then
-  firefox -no-remote -profile "$2"/firefox-pro &
+	firefox -no-remote -profile "$2"/firefox-pro &
 fi
 EOF
-	chmod +x     /media/FOX.tomb/exec-hooks
-        mkdir /media/FOX.tomb/firefox-pro
+	chmod +x /media/FOX.tomb/exec-hooks
+	mkdir /media/FOX.tomb/firefox-pro
 .EE
 
 .IP \(bu
@@ -553,13 +593,13 @@ Script a tomb to archive Pictures using Shotwell, launching it on open:
 	cat <<EOF > /media/Pictures.tomb/bind-hooks
 Pictures Pictures
 EOF
-        cat <<EOF > /media/Pictures.tomb/exec-hooks
+	cat <<EOF > /media/Pictures.tomb/exec-hooks
 #!/bin/sh
 if [ "$1" = "open" ]; then
-  which shotwell > /dev/null
-  if [ "$?" = "0" ]; then
-    shotwell -d "$2"/Pictures/.shotwell &
-  fi
+	which shotwell > /dev/null
+	if [ "$?" = "0" ]; then
+		shotwell -d "$2"/Pictures/.shotwell &
+	fi
 fi
 EOF
 	chmod +x /media/Pictures.tomb/exec-hooks
